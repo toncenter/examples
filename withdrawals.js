@@ -61,6 +61,8 @@ const doWithdraw = async (withdrwalRequest) => {
         toAddress = new TonWeb.utils.Address(toAddress).toString(true, true, false); // convert to non-bounce
     }
 
+    const isOfflineSign = false;
+
     // sign transfer (offline operation)
 
     const transfer = await wallet.methods.transfer({
@@ -68,20 +70,18 @@ const doWithdraw = async (withdrwalRequest) => {
         toAddress: toAddress,
         amount: withdrwalRequest.amount,
         seqno: withdrwalRequest.seqno,
-        payload: '123', // if necessary, here you can set a unique payload to distinguish the operation
-        sendMode: 3,
+        payload: '123' // if necessary, here you can set a unique payload to distinguish the operation
     });
-    const query = await transfer.getQuery(); // transfer query
-    const boc = await query.toBoc(false); // serialized transfer query in binary BoC format
-    const bocBase64 = TonWeb.utils.bytesToBase64(boc); // in base64 format
 
-    // send transfer request to network
+    if (isOfflineSign) {
+        const query = await transfer.getQuery(); // transfer query
+        const boc = await query.toBoc(false); // serialized transfer query in binary BoC format
+        const bocBase64 = TonWeb.utils.bytesToBase64(boc); // in base64 format
 
-    await transfer.send();
-
-    // OR
-    // await transfer.provider.sendBoc(bocBase64);
-
+        await tonweb.provider.sendBoc(bocBase64); // send transfer request to network
+    } else {
+        await transfer.send(); // send transfer request to network
+    }
 }
 
 // ATTENTION:
