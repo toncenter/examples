@@ -50,11 +50,22 @@ const doWithdraw = async (withdrwalRequest) => {
         return false;
     }
 
+    // If the recipient is a not yet initialized wallet
+    // then you need to send a non-bounce transfer
+    // As an option, you can always make non-bounce transfers for withdrawals
+
+    let toAddress = withdrwalRequest.toAddress;
+
+    const info = await tonweb.provider.getAddressInfo(toAddress);
+    if (info.state !== 'active') {
+        toAddress = new TonWeb.utils.Address(toAddress).toString(true, true, false); // convert to non-bounce
+    }
+
     // sign transfer (offline operation)
 
     const transfer = await wallet.methods.transfer({
         secretKey: keyPair.secretKey,
-        toAddress: withdrwalRequest.toAddress,
+        toAddress: toAddress,
         amount: withdrwalRequest.amount,
         seqno: withdrwalRequest.seqno,
         payload: '123', // if necessary, here you can set a unique payload to distinguish the operation
