@@ -75,4 +75,4 @@ const createWallet = async (keyPair) => {
 
 }
 
-createWallet(TonWeb.utils.nacl.sign.keyPair())
+createWallet(TonWeb.utils.nacl.sign.keyPair());
