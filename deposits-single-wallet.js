@@ -31,11 +31,17 @@ const tonweb = isMainnet ?
     new TonWeb(new TonWeb.HttpProvider('https://testnet.toncenter.com/api/v2/jsonRPC', {apiKey: 'YOUR_TESTNET_API_KEY'}));
 
 let isProcessing = false;
-let startTime = 1645023521; // start unixtime (stored in your database), transactions made earlier will be discarded. Initially save the time + 1 of your first transaction in the wallet.
-const MY_WALLET_ADDRESS = 'EQA0i8-CdGnF_DhUHHf92R1ONH6sIA9vLZ_WLcCIhfBBXwtG';
+let startTime = 0; // start unixtime (stored in your database), transactions made earlier will be discarded.
+const MY_WALLET_ADDRESS = 'EQBvI0aFLnw2QbZgjMPCLRdtRHxhUyinQudg6sdiohIwg5jL';
 
-const getTransactions = async (time, offsetTransactionLT, offsetTransactionHash) => {
-    const COUNT = 20;
+const wait = (millis) => {
+    return new Promise(resolve => {
+        setTimeout(resolve, millis);
+    });
+}
+
+const getTransactions = async (time, offsetTransactionLT, offsetTransactionHash, retryCount) => {
+    const COUNT = 10;
 
     if (offsetTransactionLT) {
         console.log(`Get ${COUNT} transactions before transaction ${offsetTransactionLT}:${offsetTransactionHash}`);
@@ -47,15 +53,28 @@ const getTransactions = async (time, offsetTransactionLT, offsetTransactionHash)
     // So TxID = address+LT+hash, these three parameters uniquely identify the transaction.
     // In our case, we are monitoring one wallet and the address is MY_WALLET_ADDRESS.
 
-    const transactions = await tonweb.provider.getTransactions(MY_WALLET_ADDRESS, COUNT, offsetTransactionLT, offsetTransactionHash);
+    let transactions;
+
+    try {
+        transactions = await tonweb.provider.getTransactions(MY_WALLET_ADDRESS, COUNT, offsetTransactionLT, offsetTransactionHash);
+    } catch (e) {
+        console.error(e);
+        // if an API error occurs, try again
+        retryCount++;
+        if (retryCount < 10) {
+            await wait(retryCount * 1000);
+            return getTransactions(time, offsetTransactionLT, offsetTransactionHash, retryCount);
+        } else {
+            return 0;
+        }
+    }
 
     console.log(`Got ${transactions.length} transactions`);
 
     if (!transactions.length) {
-        // unfortunately there is an imperfection in the HTTP API at the moment https://github.com/toncenter/ton-http-api/issues/27
-        // in rare non-persistent cases, it may return fewer transactions than requested, although transactions actually exist.
-        // so here we can't rely on the fact that the transactions actually ended.
-        return 0;
+        // If you use your own API instance make sure the code contains this fix https://github.com/toncenter/ton-http-api/commit/a40a31c62388f122b7b7f3da7c5a6f706f3d2405
+        // If you use public toncenter.com then everything is OK.
+        return time;
     }
 
     if (!time) time = transactions[0].utime;
@@ -83,11 +102,11 @@ const getTransactions = async (time, offsetTransactionLT, offsetTransactionHash)
     }
 
     if (transactions.length === 1) {
-        return 0;
+        return time;
     }
 
     const lastTx = transactions[transactions.length - 1];
-    return await getTransactions(time, lastTx.transaction_id.lt, lastTx.transaction_id.hash);
+    return await getTransactions(time, lastTx.transaction_id.lt, lastTx.transaction_id.hash, 0);
 }
 
 const tick = async () => {
@@ -95,7 +114,7 @@ const tick = async () => {
     isProcessing = true;
 
     try {
-        const result = await getTransactions(undefined, undefined, undefined);
+        const result = await getTransactions(undefined, undefined, undefined, 0);
         if (result > 0) {
             startTime = result; // store in your database
         }
