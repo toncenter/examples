@@ -66,13 +66,13 @@ async function init() {
 
                 const keyPair = TonWeb.utils.nacl.sign.keyPair(); // get key pair for this deposit wallet from your database
 
-                const WalletClass = tonweb.wallet.all.v3R2;
+                const WalletClass = tonweb.wallet.all.v3R1;
 
                 const depositWallet = new WalletClass(tonweb.provider, {
                     publicKey: keyPair.publicKey
                 });
-
-                const seqno = await depositWallet.methods.seqno().call();
+               
+                const seqno = (await depositWallet.methods.seqno().call()) || 0;
 
                 const transfer = await depositWallet.methods.transfer({
                     secretKey: keyPair.secretKey,
