@@ -14,7 +14,7 @@ Here we will look at how to process withdrawals (outgoing coins) from your hot w
 
 */
 
-const TonWeb = require("tonweb");
+import TonWeb from "tonweb";
 const BN = TonWeb.utils.BN;
 
 const isMainnet = false;

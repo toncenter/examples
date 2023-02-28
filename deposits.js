@@ -18,8 +18,8 @@ Here we will look at how to accept deposits. Each user will have their own depos
 
 */
 
-const fetch = require('node-fetch');
-const TonWeb = require("tonweb");
+import fetch from "node-fetch"
+import TonWeb from "tonweb";
 const BN = TonWeb.utils.BN;
 
 const IS_TESTNET = true;

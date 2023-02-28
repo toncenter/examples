@@ -4,11 +4,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "tonweb": "^0.0.35",
+    "tonweb": "^0.0.60",
     "tonweb-mnemonic": "^1.0.1"
   },
   "keywords": [],

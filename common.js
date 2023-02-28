@@ -1,8 +1,8 @@
 // Here we will look at how to create a key pair, a wallet and get a wallet address.
 // All operations are offline.
 
-const TonWeb = require("tonweb");
-const tonMnemonic = require("tonweb-mnemonic");
+import TonWeb from "tonweb";
+import tonMnemonic from "tonweb-mnemonic";
 
 // An account (wallet) in the blockchain (which stores the balance of coins) is determined by its private key (which only you know).
 // Thus, to create a new account, you need to generate a new public/private key pair.

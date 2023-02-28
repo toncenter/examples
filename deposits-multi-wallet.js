@@ -16,7 +16,7 @@ Here we will look at how to accept deposits. Each user will have their own depos
 
 */
 
-const TonWeb = require("tonweb");
+import TonWeb from "tonweb";
 const BN = TonWeb.utils.BN;
 
 const isMainnet = false;

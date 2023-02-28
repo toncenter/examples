@@ -19,7 +19,7 @@ So you are accepting payments (deposits) in Toncoins:
 
 */
 
-const TonWeb = require("tonweb");
+import TonWeb from "tonweb";
 
 const isMainnet = false;
 
