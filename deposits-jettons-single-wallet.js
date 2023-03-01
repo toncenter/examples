@@ -50,6 +50,12 @@ const init = async () => {
         const jettonWallet = new TonWeb.token.jetton.JettonWallet(tonweb.provider, {
             address: jettonWalletAddress
         });
+
+        const jettonData = await jettonWallet.getData();
+        if (jettonData.jettonMinterAddress.toString(false) !== new TonWeb.utils.Address(info.address).toString(false)) {
+            throw new Error('jetton minter address from jetton wallet doesnt match config');
+        }
+
         jettons[name] = {
             jettonMinter: jettonMinter,
             jettonWalletAddress: jettonWalletAddress,
