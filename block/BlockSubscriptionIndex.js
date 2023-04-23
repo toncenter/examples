@@ -36,7 +36,12 @@ export class BlockSubscriptionIndex {
                 .then(response => response.error ? Promise.reject(response.error) : response)
         }
 
+        let isProcessing = false;
+
         const tick = async () => {
+            if (isProcessing) return;
+            isProcessing = true;
+
             try {
                 const masterchainInfo = await this.tonweb.provider.getMasterchainInfo(); // get last masterchain info from node
                 const lastMasterchainBlockNumber = masterchainInfo.last.seqno;
@@ -57,6 +62,8 @@ export class BlockSubscriptionIndex {
             } catch (e) {
                 console.error(e);
             }
+
+            isProcessing = false;
         }
 
         setInterval(tick, 1000); // new masterchain block created every ~5 seconds

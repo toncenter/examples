@@ -2,7 +2,7 @@
 
 Transactions are made on the blockchain. Transactions are packaged into blocks.
 
-In order to process new payments, you need to keep track of new blocks in the blockchain, get transactions from blocks, and find transactions that relate to your service.
+In order to process new payments on multiple accounts, you need to keep track of new blocks in the blockchain, get transactions from blocks, and find transactions that relate to your service.
 
 In TON blockchain, blocks go in parallel in masterchain and shardchains.
 
