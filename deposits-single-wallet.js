@@ -15,7 +15,7 @@ So you are accepting payments (deposits) in Toncoins:
 
 4. Your backend constantly periodically requests a list of your wallet transactions.
 
-5. It iterates the list of transactions, finds incoming transactions, and it processes them as a deposit, if they have not been processed yet.
+5. It iterates the list of transactions, finds incoming transactions, and it processes eligible transactions as a deposits, if they have not been processed yet.
 
 */
 
@@ -32,6 +32,8 @@ const tonweb = isMainnet ?
     new TonWeb(new TonWeb.HttpProvider('https://testnet.toncenter.com/api/v2/jsonRPC', {apiKey: 'YOUR_TESTNET_API_KEY'}));
 
 const MY_WALLET_ADDRESS = 'EQBvI0aFLnw2QbZgjMPCLRdtRHxhUyinQudg6sdiohIwg5jL';
+
+// Listen
 
 const onTransaction = async (tx) => {
     // If incoming message source address is defined and no outgoing messages - this is incoming Toncoins.
