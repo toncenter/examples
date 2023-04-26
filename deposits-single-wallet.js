@@ -22,7 +22,7 @@ So you are accepting payments (deposits) in Toncoins:
 import TonWeb from "tonweb";
 import {AccountSubscription} from "./account/AccountSubscription.js";
 
-const isMainnet = false;
+const isMainnet = true;
 
 // Use toncenter.com as HTTP API endpoint to interact with TON blockchain.
 // You can get HTTP API key at https://toncenter.com
@@ -31,7 +31,7 @@ const tonweb = isMainnet ?
     new TonWeb(new TonWeb.HttpProvider('https://toncenter.com/api/v2/jsonRPC', {apiKey: 'YOUR_MAINNET_API_KEY'})) :
     new TonWeb(new TonWeb.HttpProvider('https://testnet.toncenter.com/api/v2/jsonRPC', {apiKey: 'YOUR_TESTNET_API_KEY'}));
 
-const MY_WALLET_ADDRESS = 'EQBvI0aFLnw2QbZgjMPCLRdtRHxhUyinQudg6sdiohIwg5jL';
+const MY_WALLET_ADDRESS = 'EQB7AhB4fP7SWtnfnIMcVUkwIgVLKqijlcpjNEPUVontypON';
 
 // Listen
 
@@ -40,6 +40,11 @@ const onTransaction = async (tx) => {
     // ATTENTION: ALWAYS CHECK THAT THERE WERE NO OUTGOING MESSAGES.
 
     if (tx.in_msg.source && tx.out_msgs.length === 0) {
+
+        if (tx.in_msg.msg_data && tx.in_msg.msg_data['@type'] !== 'msg.dataText') { // no text comment
+            return;
+        }
+
         const value = tx.in_msg.value; // amount in nano-Toncoins (1 Toncoin = 1e9 nano-Toncoins)
         const senderAddress = tx.in_msg.source; // sender address
         const payload = tx.in_msg.message; // transfer text comment (in our case, the user should send the UUID as a text comment)

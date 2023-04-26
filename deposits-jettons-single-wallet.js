@@ -20,7 +20,7 @@ So you are accepting payments (deposits) in Jettons:
 import TonWeb from "tonweb";
 import {AccountSubscription} from "./account/AccountSubscription.js";
 
-const isMainnet = false;
+const isMainnet = true;
 
 // Use toncenter.com as HTTP API endpoint to interact with TON blockchain.
 // You can get HTTP API key at https://toncenter.com
@@ -29,7 +29,7 @@ const tonweb = isMainnet ?
     new TonWeb(new TonWeb.HttpProvider('https://toncenter.com/api/v2/jsonRPC', {apiKey: 'YOUR_MAINNET_API_KEY'})) :
     new TonWeb(new TonWeb.HttpProvider('https://testnet.toncenter.com/api/v2/jsonRPC', {apiKey: 'YOUR_TESTNET_API_KEY'}));
 
-const MY_WALLET_ADDRESS = 'EQCdqXGvONLwOr3zCNX5FjapflorB6ZsOdcdfLrjsDLt3Fy9'; // your HOT wallet
+const MY_WALLET_ADDRESS = 'EQB7AhB4fP7SWtnfnIMcVUkwIgVLKqijlcpjNEPUVontypON'; // your HOT wallet
 
 // Supported jettons config
 
