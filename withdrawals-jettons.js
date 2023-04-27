@@ -64,6 +64,14 @@ const prepare = async () => {
     hotWalletAddressString = hotWalletAddress.toString(true, true, true);
     console.log('My HOT wallet is ', hotWalletAddressString);
 
+    // ATTENTION:
+    // Jetton-wallet contract has automatic Toncoin balance replenishment during transfer -
+    // at the time the jettons arrive, the jetton-wallet contract always leaves a small Toncoin amount on the balance, enough to store for about a year.
+    //
+    // However, if there were no transfers for a very long time, it may freeze - to prevent this you need to maintain a Toncoin balance
+    // on your jetton-wallets contracts yourself.
+    // If the freezing has already happened, you can unfreeze them manually by https://unfreezer.ton.org/
+
     for (const name in JETTONS_INFO) {
         const info = JETTONS_INFO[name];
         const jettonMinter = new TonWeb.token.jetton.JettonMinter(tonweb.provider, {
