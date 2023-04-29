@@ -18,6 +18,7 @@ Here we will look at how to accept Jettons deposits. Each user will have their o
 
 import TonWeb from "tonweb";
 import {BlockSubscriptionIndex} from "./block/BlockSubscriptionIndex.js";
+import TonWebMnemonic from "tonweb-mnemonic";
 
 const BN = TonWeb.utils.BN;
 
@@ -33,27 +34,26 @@ const MY_HOT_WALLET_ADDRESS = 'EQB7AhB4fP7SWtnfnIMcVUkwIgVLKqijlcpjNEPUVontypON'
 
 // Supported jettons config
 
-const jettonsInfo = [
-    {
-        name: 'jUSDC',
+const jettonsInfo = {
+    'jUSDC': {
         address: 'EQB-MPwrd1G6WKNkLz_VnV6WqBDd142KMQv-g1O-8QUA3728',
         decimals: 6,
         hasStandardInternalTransfer: true,
         minDepositAmount: '1' // minimum amount to deposit in units
     },
-    {
-        name: 'KOTE',
+    'KOTE': {
         address: 'EQBlU_tKISgpepeMFT9t3xTDeiVmo25dW_4vUOl6jId_BNIj',
         decimals: 9,
         hasStandardInternalTransfer: true,
         minDepositAmount: '1' // minimum amount to deposit in units
     }
-];
+};
 
 const jettons = {};
 
-for (const jettonInfo of jettonsInfo) {
-    jettons[jettonInfo.name] = new TonWeb.token.jetton.JettonMinter(tonweb.provider, {address: jettonInfo.address});
+for (const jettonInfoName in jettonsInfo) {
+    const jettonInfo = jettonsInfo[jettonInfoName];
+    jettons[jettonInfoName] = new TonWeb.token.jetton.JettonMinter(tonweb.provider, {address: jettonInfo.address});
 }
 
 // Create deposit jetton-wallets for each jetton for specified user
@@ -69,18 +69,17 @@ const createWallet = (keyPair) => {
     return wallet;
 }
 
-const createDepositWallet = async (userId) => {
-    const keyPair = TonWeb.utils.newKeyPair(); // generate new keypair for user deposit wallet
+const createDepositWallet = async (userId, keyPair) => {
     const wallet = createWallet(keyPair);
 
     const address = await wallet.getAddress();
-    console.log('user deposit wallet is ' + address.toString(true, true, true))
+    console.log(`user ${userId} deposit wallet is ` + address.toString(true, true, true))
     userIdToTonWallet[userId] = {address, keyPair};
     // get deposit jetton-wallet addresses for this user
     for (const jettonName in jettons) {
         const jetton = jettons[jettonName];
         const jettonAddress = await jetton.getJettonWalletAddress(address);
-        console.log(`user underlying ${jettonName} jetton-wallet is ` + jettonAddress.toString(true, true, true));
+        console.log(`user ${userId} underlying ${jettonName} jetton-wallet is ` + jettonAddress.toString(true, true, true));
         if (!userIdToJettonWallet[userId]) {
             userIdToJettonWallet[userId] = {};
         }
@@ -105,7 +104,7 @@ const processDeposit = async (request) => {
     }
 
     const jettonWalletAddress = userIdToJettonWallet[request.userId][request.jettonName];
-    const jettonWallet = TonWeb.token.jetton.JettonWallet(tonweb.provider, {address: jettonWalletAddress});
+    const jettonWallet = new TonWeb.token.jetton.JettonWallet(tonweb.provider, {address: jettonWalletAddress});
 
     const jettonBalance = (await jettonWallet.getData()).balance;
 
@@ -116,7 +115,7 @@ const processDeposit = async (request) => {
         return false;
     }
 
-    const seqno = await wallet.methods.seqno().call();
+    const seqno = await wallet.methods.seqno().call() || 0;
 
     const transfer = await wallet.methods.transfer({
         secretKey: keyPair.secretKey,
@@ -150,25 +149,29 @@ const processDeposit = async (request) => {
     //
     // However, a case is possible when a user sent too few jettons, your service did not transfer jettons to a hot wallet, and then this jetton-wallet was frozen.
     // In this case, the user can be offered to unfreeze his deposit address on his own by https://unfreezer.ton.org/
+
+    return true;
 }
 
-const processDepositsRequest = [];
+const depositsRequests = [];
 
 let isProcessing = false;
 
 const processDepositsTick = async () => {
-    if (!processDepositsRequest.length) return; // nothing to withdraw
+    if (!depositsRequests.length) return; // nothing to withdraw
 
     if (isProcessing) return;
     isProcessing = true;
 
+    console.log(depositsRequests.length + ' requests');
+
     // Get first  request from queue from database
 
-    const request = processDepositsRequest[0];
+    const request = depositsRequests[0];
 
     try {
         if (await processDeposit(request)) {
-            processDepositsRequest.shift(); // delete first request from queue
+            depositsRequests.shift(); // delete first request from queue
         }
     } catch (e) {
         console.error(e);
@@ -185,25 +188,34 @@ const findDepositAddress = async (addressString) => {
     const address = new TonWeb.utils.Address(addressString).toString(false);
 
     for (const userId in userIdToJettonWallet) {
-        for (const jettonInfo of jettonsInfo) {
-            const jettonWalletAddress = userIdToJettonWallet[userId][jettonInfo.name].toString(false);
+        for (const jettonInfoName in jettonsInfo) {
+            const jettonWalletAddress = userIdToJettonWallet[userId][jettonInfoName].toString(false);
             if (address === jettonWalletAddress) {
-                return {userId: userId, jettonName: jettonInfo.name};
+                return {userId: userId, jettonName: jettonInfoName};
             }
         }
     }
     return null;
 }
 
-const validateJettonTransfer = async (tx, jettonName) => {
+const validateJettonTransfer = async (txFromIndex, jettonName) => {
     try {
         const jettonInfo = jettonsInfo[jettonName];
 
-        const sourceAddress = tx.in_msg.source;
+        const sourceAddress = txFromIndex.in_msg.source;
         if (!sourceAddress) {
             // external message - not related to jettons
             return false;
         }
+
+        // For security, we double-check each deposit transaction with an additional direct request to the node
+        const result = await tonweb.provider.getTransactions(txFromIndex.account, 1, txFromIndex.lt, txFromIndex.hash);
+        if (result.length < 1) {
+            throw new Error('no transaction in node');
+        }
+        const tx = result[0];
+        // You can check `in_msg` and `out_msgs` parameters between `txFromIndex` and `tx` from node
+
 
         // KEEP IN MIND that jettons are not required to implement a common internal_transfer, although the vast majority of jettons do.
         // If you want to support an unusual jetton, you don't need to parse the internal_transfer, just look at the balance of the jetton-wallet and transfer it to the hot wallet.
@@ -253,7 +265,7 @@ const onTransaction = async (tx) => {
 
         const jettonInfo = jettonsInfo[found.jettonName]
         const jettonWalletAddress = userIdToJettonWallet[found.userId][found.jettonName];
-        const jettonWallet = TonWeb.token.jetton.JettonWallet(tonweb.provider, {address: jettonWalletAddress});
+        const jettonWallet = new TonWeb.token.jetton.JettonWallet(tonweb.provider, {address: jettonWalletAddress});
         const jettonBalance = (await jettonWallet.getData()).balance;
 
         if (new BN(jettonInfo.minDepositAmount).gt(jettonBalance)) {
@@ -261,15 +273,7 @@ const onTransaction = async (tx) => {
             return false;
         }
 
-        // For security, we double-check each deposit transaction with an additional direct request to the node
-        const result = await tonweb.provider.getTransactions(tx.account, 1, tx.lt, tx.hash);
-        if (result.length < 1) {
-            throw new Error('no transaction in node');
-        }
-        const txFromNode = result[0];
-        // You can check `in_msg` and `out_msgs` parameters between `tx` and `txFromNode`
-
-        console.log(found.name + ' jetton deposit of user ' + found.userId + ' detected');
+        console.log(found.jettonName + ' jetton deposit of user ' + found.userId + ' detected');
 
         // Your need create Toncoin top-up queue (see `withdrawals.js`) from you reserve wallet to user deposit wallet
         // You will send `TOP_UP_AMOUNT` small amount of Toncoins to deposit wallet. It's amount for gas to transfer jetton.
@@ -281,7 +285,7 @@ const onTransaction = async (tx) => {
         //     toAddress: userIdToTonWallet[found.userId].address
         // });
 
-        processDepositsRequest.push({ // request to transfer jettons from deposit wallet to hot wallet
+        depositsRequests.push({ // request to transfer jettons from deposit wallet to hot wallet
             jettonName: found.jettonName,
             userId: found.userId
         });
@@ -289,10 +293,12 @@ const onTransaction = async (tx) => {
 }
 
 const init = async () => {
-    await createDepositWallet(0);
+    await createDepositWallet(0, TonWeb.utils.newKeyPair()); // generate new keypair for user deposit wallet
     console.log('To deposit send jettons to address ' + (userIdToTonWallet[0]).address.toString(true, true, true));
-    await createDepositWallet(1);
+    await createDepositWallet(1, TonWeb.utils.newKeyPair()); // generate new keypair for user deposit wallet
     console.log('To deposit send jettons to address ' + (userIdToTonWallet[1]).address.toString(true, true, true));
+    await createDepositWallet(2, TonWeb.utils.keyPairFromSeed(await TonWebMnemonic.mnemonicToSeed('word1 word2 word3 ...'.split(' '))));
+    console.log('To deposit send jettons to address ' + (userIdToTonWallet[2]).address.toString(true, true, true));
 
     const masterchainInfo = await tonweb.provider.getMasterchainInfo(); // get last masterchain info from node
     const lastMasterchainBlockNumber = masterchainInfo.last.seqno;
