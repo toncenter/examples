@@ -216,6 +216,9 @@ const validateJettonTransfer = async (txFromIndex, jettonName) => {
         const tx = result[0];
         // You can check `in_msg` and `out_msgs` parameters between `txFromIndex` and `tx` from node
 
+        if (tx.out_msgs.length === 1 && new TonWeb.utils.Address(tx.out_msgs[0].destination).toString(false) === new TonWeb.utils.Address(tx.in_msg.source).toString(false)) {
+            return false; // bounced message - error in transaction
+        }
 
         // KEEP IN MIND that jettons are not required to implement a common internal_transfer, although the vast majority of jettons do.
         // If you want to support an unusual jetton, you don't need to parse the internal_transfer, just look at the balance of the jetton-wallet and transfer it to the hot wallet.
