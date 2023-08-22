@@ -98,6 +98,14 @@ const processDeposit = async (tx) => {
 }
 
 const onTransaction = async (tx) => {
+    // ATTENTION: ALWAYS CHECK THAT THERE WERE NO OUTGOING MESSAGES.
+    // It is important to check that Toncoins did not bounce back in case of an error.
+    // To do this, we check that there was only an incoming message and there were no outgoing messages.
+
+    if (tx.out_msgs.length > 0) {
+        return;
+    }
+
     // If the `tx.account` address is in your database of deposit addresses
     // then we check and process the deposit
 
