@@ -59,7 +59,7 @@ const createWallet = (keyPair) => {
  * @return {Promise<void>}
  */
 const processDeposit = async (tx) => {
-    const balance = new BN(await tonweb.provider.getBalance(tx.account));
+    const balance = new BN(await tonweb.provider.getBalance(tx.address.account_address));
 
     if (balance.gt(new BN(0))) {
 
@@ -118,7 +118,7 @@ const onTransaction = async (tx) => {
         const txFromNode = result[0];
         // You can check `in_msg` and `out_msgs` parameters between `tx` and `txFromNode`
 
-        await processDeposit(tx);
+        await processDeposit(txFromNode); // use tx from your own node
     }
 }
 

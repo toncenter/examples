@@ -38,6 +38,7 @@ const MY_WALLET_ADDRESS = 'EQB7AhB4fP7SWtnfnIMcVUkwIgVLKqijlcpjNEPUVontypON';
 const onTransaction = async (tx) => {
     // If incoming message source address is defined and no outgoing messages - this is incoming Toncoins.
     // ATTENTION: ALWAYS CHECK THAT THERE WERE NO OUTGOING MESSAGES.
+    // It is important to check that Toncoins did not bounce back in case of an error.
 
     if (tx.in_msg.source && tx.out_msgs.length === 0) {
 
