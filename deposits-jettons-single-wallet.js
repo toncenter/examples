@@ -119,7 +119,7 @@ const init = async () => {
         const amount = slice.loadCoins();
         const from = slice.loadAddress();
         const maybeRef = slice.loadBit();
-        const payload = maybeRef ? slice.loadRef().beginParse() : slice;
+        const payload = maybeRef ? slice.loadRef() : slice;
         const payloadOp = payload.loadUint(32);
         if (!payloadOp.eq(new TonWeb.utils.BN(0))) {
             console.log('no text comment in transfer_notification');
