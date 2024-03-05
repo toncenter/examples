@@ -4,4 +4,4 @@
 
 Thus, you may sometimes need to make several requests to get all transaction of the account, the code [AccountSubscription.js](AccountSubscription.js) implements this.
 
-In [deposits-single-wallet.js](../deposits-single-wallet.js) you can find example of using `AccountSubscription`.
+In [deposits.js](../deposits-single-wallet.js) you can find example of using `AccountSubscription`.
