@@ -61,7 +61,7 @@ const jettons = {};
 
 const prepare = async () => {
     hotWalletAddress = await wallet.getAddress();
-    hotWalletAddressString = hotWalletAddress.toString(true, true, true);
+    hotWalletAddressString = hotWalletAddress.toString(true, true, false);
     console.log('My HOT wallet is ', hotWalletAddressString);
 
     // ATTENTION:
@@ -223,7 +223,7 @@ const init = async () => {
         {
             jettonName: 'jUSDC',
             amount: '1000',  // 0.001 jUSDC in units (decimals = 6)
-            toAddress: 'EQAn_rlLlk_MwdfHcspLfpl3iEaQC1WZPFDD7KSbXNbXJ5HJ',
+            toAddress: 'UQAn_rlLlk_MwdfHcspLfpl3iEaQC1WZPFDD7KSbXNbXJ8wM',
         }
     ];
 

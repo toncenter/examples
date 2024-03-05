@@ -10,7 +10,7 @@ import tonMnemonic from "tonweb-mnemonic";
 const createKeyPair = async () => {
 
     // 1. Use tonweb-mnemonic to generate random 24 words which determine the secret key.
-    // These words will be compatible with TON wallet applications, i.e. using them you will be able to import your account into third-party applications.
+    // These words will be compatible with TON wallet applications, i.e. using them you will be able to import your account into third-party TON applications.
 
     /** @type {string[]} */
     const words = await tonMnemonic.generateMnemonic();
@@ -48,7 +48,7 @@ const createWallet = async (keyPair) => {
     const tonweb = new TonWeb();
 
     // There are standard wallet smart contracts that everyone uses.
-    // There are several versions, at the moment wallet v3R2 is default.
+    // There are several versions, at the moment wallet v3R2 is default for exchanges.
 
     const WalletClass = tonweb.wallet.all.v3R2;
 
@@ -65,9 +65,10 @@ const createWallet = async (keyPair) => {
     const address = await wallet.getAddress();
 
     // The address can be displayed in different formats
-    // More on https://ton.org/docs/#/howto/step-by-step?id=_1-smart-contract-addresses
+    // More on https://docs.ton.org/learn/overviews/addresses#raw-and-user-friendly-addresses
+    // for wallet address you need to use user-friendly non-bounceable format:
 
-    console.log(address.toString(true, true, true)); // print address in default format. In 99% of cases this format is used in UI applications.
+    console.log(address.toString(true, true, false)); // print address in format to display in UI
 
     // We did everything offline and there is no our wallet smart contract on the network yet.
     // To deploy it, we first need to send Toncoins to the address.

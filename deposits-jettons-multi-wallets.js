@@ -9,7 +9,7 @@ Here we will look at how to accept Jettons deposits. Each user will have their o
 3. You tell the user - please send N jettons to this wallet address.
 
 4. Your backend is constantly subscribed to blocks appearing on the network.
-   It is convenient to use the Index HTTP API of toncenter.com: https://toncenter.com/api/index/# or https://testnet.toncenter.com/api/index/#
+   It is convenient to use the Index HTTP API of toncenter.com: https://toncenter.com/api/v3/# or https://testnet.toncenter.com/api/v3/#
 
 5. Your backend iterates the transactions of each block, and if the transaction occurred on one of the deposit jetton-wallets, it is processed as a deposit.
    For security, we double-check each deposit transaction (its parameters and that the transaction exists) with an additional direct request to the node.
@@ -30,7 +30,7 @@ const INDEX_API_URL = IS_TESTNET ? 'https://testnet.toncenter.com/api/index/' : 
 
 const tonweb = new TonWeb(new TonWeb.HttpProvider(NODE_API_URL, {apiKey: TONCENTER_API_KEY}));
 
-const MY_HOT_WALLET_ADDRESS = 'EQB7AhB4fP7SWtnfnIMcVUkwIgVLKqijlcpjNEPUVontypON';
+const MY_HOT_WALLET_ADDRESS = 'UQB7AhB4fP7SWtnfnIMcVUkwIgVLKqijlcpjNEPUVontys5I';
 
 // Supported jettons config
 
@@ -73,7 +73,7 @@ const createDepositWallet = async (userId, keyPair) => {
     const wallet = createWallet(keyPair);
 
     const address = await wallet.getAddress();
-    console.log(`user ${userId} deposit wallet is ` + address.toString(true, true, true))
+    console.log(`user ${userId} deposit wallet is ` + address.toString(true, true, false))
     userIdToTonWallet[userId] = {address, keyPair};
     // get deposit jetton-wallet addresses for this user
     for (const jettonName in jettons) {
@@ -297,11 +297,11 @@ const onTransaction = async (tx) => {
 
 const init = async () => {
     await createDepositWallet(0, TonWeb.utils.newKeyPair()); // generate new keypair for user deposit wallet
-    console.log('To deposit send jettons to address ' + (userIdToTonWallet[0]).address.toString(true, true, true));
+    console.log('To deposit send jettons to address ' + (userIdToTonWallet[0]).address.toString(true, true, false));
     await createDepositWallet(1, TonWeb.utils.newKeyPair()); // generate new keypair for user deposit wallet
-    console.log('To deposit send jettons to address ' + (userIdToTonWallet[1]).address.toString(true, true, true));
+    console.log('To deposit send jettons to address ' + (userIdToTonWallet[1]).address.toString(true, true, false));
     await createDepositWallet(2, TonWeb.utils.keyPairFromSeed(await TonWebMnemonic.mnemonicToSeed('word1 word2 word3 ...'.split(' '))));
-    console.log('To deposit send jettons to address ' + (userIdToTonWallet[2]).address.toString(true, true, true));
+    console.log('To deposit send jettons to address ' + (userIdToTonWallet[2]).address.toString(true, true, false));
 
     const masterchainInfo = await tonweb.provider.getMasterchainInfo(); // get last masterchain info from node
     const lastMasterchainBlockNumber = masterchainInfo.last.seqno;

@@ -11,7 +11,7 @@ Here we will look at how to accept Toncoin deposits. Each user will have their o
    ton://transfer/<wallet_address>?amount=<amount_in_nano>
 
 4. Your backend is constantly subscribed to blocks appearing on the network.
-   It is convenient to use the Index HTTP API of toncenter.com: https://toncenter.com/api/index/# or https://testnet.toncenter.com/api/index/#
+   It is convenient to use the Index HTTP API of toncenter.com: https://toncenter.com/api/v3/# or https://testnet.toncenter.com/api/v3/#
 
 5. Your backend iterates the transactions of each block, and if the transaction occurred on one of the deposit wallets, it is processed as a deposit.
    For security, we double-check each deposit transaction (its parameters and that the transaction exists) with an additional direct request to the node.
@@ -31,15 +31,15 @@ const INDEX_API_URL = IS_TESTNET ? 'https://testnet.toncenter.com/api/index/' : 
 
 const tonweb = new TonWeb(new TonWeb.HttpProvider(NODE_API_URL, {apiKey: TONCENTER_API_KEY}));
 
-const MY_HOT_WALLET_ADDRESS = 'EQB7AhB4fP7SWtnfnIMcVUkwIgVLKqijlcpjNEPUVontypON';
+const MY_HOT_WALLET_ADDRESS = 'UQB7AhB4fP7SWtnfnIMcVUkwIgVLKqijlcpjNEPUVontys5I';
 
 /**
  * @param   address {string}
  * @return {boolean}
  */
 const isDepositAddress = async (address) => {
-    new TonWeb.Address(address).toString(true, true, true); // convert address to you form
-    // more about address forms - https://ton.org/docs/#/howto/step-by-step?id=_1-smart-contract-addresses
+    new TonWeb.Address(address).toString(true, true, false); // non-bounceable format used for wallets
+    // more about address forms - https://docs.ton.org/learn/overviews/addresses#raw-and-user-friendly-addresses
 
     // check in DB that this address is one of deposit addresses of your service
 

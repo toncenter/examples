@@ -107,7 +107,7 @@ const withdrawalRequests = [
     // In real system `withdrawalRequests` is table in your persistent database
     {
         amount: TonWeb.utils.toNano('0.0123'),  // 0.0123 TON
-        toAddress: 'EQAn_rlLlk_MwdfHcspLfpl3iEaQC1WZPFDD7KSbXNbXJ5HJ',
+        toAddress: 'UQAn_rlLlk_MwdfHcspLfpl3iEaQC1WZPFDD7KSbXNbXJ8wM',
     }
 ];
 
@@ -121,7 +121,7 @@ const withdrawalRequests = [
 
 const init = async () => {
     const hotWalletAddress = await wallet.getAddress();
-    const hotWalletAddressString = hotWalletAddress.toString(true, true, true);
+    const hotWalletAddressString = hotWalletAddress.toString(true, true, false);
     console.log('My HOT wallet is ', hotWalletAddressString);
 
     let isProcessing = false;
