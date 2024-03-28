@@ -95,10 +95,10 @@ const init = async () => {
 
                 withdrawalRequest.queryId = queryId.getQueryId();
 
-                if (queryId.isEnd()) {
-                    queryId = new HighloadQueryId(); // reset, start from 0 again
+                if (queryId.hasNext()) {
+                    queryId = queryId.getNext();
                 } else {
-                    queryId.increase();
+                    queryId = new HighloadQueryId(); // reset, start from 0 again
                 }
 
                 withdrawalRequest.createdAt = now;

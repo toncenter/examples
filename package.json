@@ -9,7 +9,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "tonweb": "^0.0.65",
+    "tonweb": "^0.0.66",
     "tonweb-mnemonic": "^1.0.1"
   },
   "keywords": [],
