@@ -63,7 +63,7 @@ const withdrawalRequests = [
 const sendWithdrawalRequest = (withdrawalRequest) => {
     const transfer = highloadWallet.methods.transfer({
         secretKey: keyPair.secretKey,
-        queryId: withdrawalRequest.queryId,
+        queryId: HighloadQueryId.fromQueryId(withdrawalRequest.queryId),
         createdAt: withdrawalRequest.createdAt,
         toAddress: withdrawalRequest.toAddress,
         amount: withdrawalRequest.amount,
