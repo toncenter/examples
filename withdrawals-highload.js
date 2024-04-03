@@ -139,7 +139,9 @@ const init = async () => {
                     } else {
 
                         // repeat send with same `queryId` and `createdAt`
-                        await sendWithdrawalRequest(withdrawalRequest);
+                        try {
+                            await sendWithdrawalRequest(withdrawalRequest); // may throw due to TOCTOU
+                        } catch (e) {}
 
                     }
 
@@ -160,10 +162,10 @@ const init = async () => {
 
         let txs = await tonweb.provider.getTransactions(hotWalletAddressString, TX_LIMIT, undefined, undefined, undefined, true); // todo: remove archival if not needed
         const fullTxList = [];
-        while (true) {
+        mainloop: while (true) {
             for (const tx of txs.length < TX_LIMIT ? txs : txs.slice(0, txs.length - 1)) {
                 if (tx.transaction_id.lt === lastKnownTxLt) {
-                    break;
+                    break mainloop;
                 }
 
                 fullTxList.push(tx);
