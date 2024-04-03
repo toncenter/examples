@@ -88,16 +88,18 @@ const init = async () => {
     let queryId = HighloadQueryId.fromQueryId(0n); // todo: load next query id from db
 
     const tick = async () => {
+        if (isProcessing) return;
+        isProcessing = true;
+
+        // todo: load unprocessed withdrawal requests here (see unprocessed conditions below)
+
         if (!withdrawalRequests.length) return; // nothing to withdraw
 
         console.log(withdrawalRequests.length + ' requests');
 
-        if (isProcessing) return;
-        isProcessing = true;
-
         const now = (await tonweb.provider.getExtendedAddressInfo(hotWalletAddressString)).sync_utime;
 
-        for (const withdrawalRequest of withdrawalRequests.filter(req => !req.processed && !req.needsResend)) { // todo: load unprocessed requests from db
+        for (const withdrawalRequest of withdrawalRequests.filter(req => !req.processed && !req.needsResend)) { // todo: use requests from db
             if (withdrawalRequest.queryId === null) { // not sent yet
 
                 withdrawalRequest.queryId = queryId.getQueryId();
