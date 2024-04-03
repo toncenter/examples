@@ -91,6 +91,8 @@ const init = async () => {
         if (isProcessing) return;
         isProcessing = true;
 
+        try {
+
         // todo: load unprocessed withdrawal requests here (see unprocessed conditions below)
 
         if (!withdrawalRequests.length) return; // nothing to withdraw
@@ -153,12 +155,16 @@ const init = async () => {
 
         }
 
-        isProcessing = false;
+        } catch (e) { console.error(e); } finally {
+            isProcessing = false;
+        }
     }
 
     const txTick = async () => {
         if (isTxProcessing) return;
         isTxProcessing = true;
+
+        try {
 
         const TX_LIMIT = 20;
 
@@ -221,7 +227,9 @@ const init = async () => {
             // todo: persist last known tx lt and utime to db
         }
 
-        isTxProcessing = false;
+        } catch (e) { console.error(e); } finally {
+            isTxProcessing = false;
+        }
     };
 
     await txTick(); // wait for its completion for the first time to clean possible undiscovered txs from a possibly crashed state
