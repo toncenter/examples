@@ -46,8 +46,6 @@ const highloadWallet = new HighloadWalletContractV3(tonweb.provider, {
     timeout: HIGHLOAD_WALLET_TIMEOUT,
 });
 
-let queryId = new HighloadQueryId(); // query id iterator
-
 // Withdrawal requests
 const withdrawalRequests = [
     // Contains example withdrawal request
@@ -86,6 +84,8 @@ const init = async () => {
 
     let lastKnownTxLt = undefined; // todo: load this from db
     let lastKnownTxUtime = undefined; // todo: load this from db
+    // query id iterator
+    let queryId = HighloadQueryId.fromQueryId(0n); // todo: load next query id from db
 
     const tick = async () => {
         if (!withdrawalRequests.length) return; // nothing to withdraw
@@ -110,7 +110,8 @@ const init = async () => {
 
                 withdrawalRequest.createdAt = now;
 
-                // save to your database
+                // todo: persist withdrawalRequest.queryId and withdrawalRequest.createdAt in your database
+                // todo: persist queryId.getQueryId() in your database as the next query id
 
                 await sendWithdrawalRequest(withdrawalRequest);
 
@@ -127,7 +128,7 @@ const init = async () => {
                     withdrawalRequests.push({ ...withdrawalRequest, queryId: null, createdAt: null });
 
                 } else {
-                    const isProcessed = await highloadWallet.isProcessed(withdrawalRequest.queryId, false);
+                    const isProcessed = await highloadWallet.isProcessed(HighloadQueryId.fromQueryId(withdrawalRequest.queryId), false);
 
                     if (isProcessed) {
 
