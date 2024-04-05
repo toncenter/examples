@@ -46,8 +46,6 @@ const highloadWallet = new HighloadWalletContractV3(tonweb.provider, {
     timeout: HIGHLOAD_WALLET_TIMEOUT,
 });
 
-let queryId = new HighloadQueryId(); // query id iterator
-
 // Withdrawal requests
 const withdrawalRequests = [
     // Contains example withdrawal request
@@ -86,18 +84,24 @@ const init = async () => {
 
     let lastKnownTxLt = undefined; // todo: load this from db
     let lastKnownTxUtime = undefined; // todo: load this from db
+    // query id iterator
+    let queryId = HighloadQueryId.fromQueryId(0n); // todo: load next query id from db
 
     const tick = async () => {
+        if (isProcessing) return;
+        isProcessing = true;
+
+        try {
+
+        // todo: load unprocessed withdrawal requests here (see unprocessed conditions below)
+
         if (!withdrawalRequests.length) return; // nothing to withdraw
 
         console.log(withdrawalRequests.length + ' requests');
 
-        if (isProcessing) return;
-        isProcessing = true;
-
         const now = (await tonweb.provider.getExtendedAddressInfo(hotWalletAddressString)).sync_utime;
 
-        for (const withdrawalRequest of withdrawalRequests.filter(req => !req.processed && !req.needsResend)) { // todo: load unprocessed requests from db
+        for (const withdrawalRequest of withdrawalRequests.filter(req => !req.processed && !req.needsResend)) { // todo: use requests from db
             if (withdrawalRequest.queryId === null) { // not sent yet
 
                 withdrawalRequest.queryId = queryId.getQueryId();
@@ -110,7 +114,8 @@ const init = async () => {
 
                 withdrawalRequest.createdAt = now;
 
-                // save to your database
+                // todo: persist withdrawalRequest.queryId and withdrawalRequest.createdAt in your database
+                // todo: persist queryId.getQueryId() in your database as the next query id
 
                 await sendWithdrawalRequest(withdrawalRequest);
 
@@ -127,7 +132,7 @@ const init = async () => {
                     withdrawalRequests.push({ ...withdrawalRequest, queryId: null, createdAt: null });
 
                 } else {
-                    const isProcessed = await highloadWallet.isProcessed(withdrawalRequest.queryId, false);
+                    const isProcessed = await highloadWallet.isProcessed(HighloadQueryId.fromQueryId(withdrawalRequest.queryId), false);
 
                     if (isProcessed) {
 
@@ -138,7 +143,9 @@ const init = async () => {
                     } else {
 
                         // repeat send with same `queryId` and `createdAt`
-                        await sendWithdrawalRequest(withdrawalRequest);
+                        try {
+                            await sendWithdrawalRequest(withdrawalRequest); // may throw due to TOCTOU
+                        } catch (e) {}
 
                     }
 
@@ -148,21 +155,25 @@ const init = async () => {
 
         }
 
-        isProcessing = false;
+        } catch (e) { console.error(e); } finally {
+            isProcessing = false;
+        }
     }
 
     const txTick = async () => {
         if (isTxProcessing) return;
         isTxProcessing = true;
 
+        try {
+
         const TX_LIMIT = 20;
 
         let txs = await tonweb.provider.getTransactions(hotWalletAddressString, TX_LIMIT, undefined, undefined, undefined, true); // todo: remove archival if not needed
         const fullTxList = [];
-        while (true) {
+        mainloop: while (true) {
             for (const tx of txs.length < TX_LIMIT ? txs : txs.slice(0, txs.length - 1)) {
                 if (tx.transaction_id.lt === lastKnownTxLt) {
-                    break;
+                    break mainloop;
                 }
 
                 fullTxList.push(tx);
@@ -216,7 +227,9 @@ const init = async () => {
             // todo: persist last known tx lt and utime to db
         }
 
-        isTxProcessing = false;
+        } catch (e) { console.error(e); } finally {
+            isTxProcessing = false;
+        }
     };
 
     await txTick(); // wait for its completion for the first time to clean possible undiscovered txs from a possibly crashed state
