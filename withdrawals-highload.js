@@ -10,6 +10,8 @@ Here we will look at how to process withdrawals (outgoing Toncoins) from your ho
 
 4. We can repeat sending this transfer until it successfully sends. The `created_at` and `query_id` transfer parameter protects us from double withdrawal.
 
+A more detailed highload v3 overview: https://docs.ton.org/participate/wallets/contracts#highload-wallet-v3
+
 */
 
 import TonWeb from "tonweb";
