@@ -57,7 +57,7 @@ const withdrawalRequests = [
         createdAt: null,
         processed: false,
         sent: null,
-        needsResend: false,
+        wasRecreated: false,
     }
 ];
 
@@ -76,8 +76,8 @@ const sendWithdrawalRequest = (withdrawalRequest) => {
 
 const init = async () => {
     const hotWalletAddress = await highloadWallet.getAddress();
-    const hotWalletAddressString = hotWalletAddress.toString(true, true, true);
-    console.log('My HOT wallet is ', hotWalletAddressString);
+    const hotWalletAddressString = hotWalletAddress.toString(true, true, false);
+    console.log('My HOT wallet is', hotWalletAddressString);
 
     let isProcessing = false;
     let isTxProcessing = false;
@@ -93,7 +93,7 @@ const init = async () => {
 
         try {
 
-        // todo: load unprocessed withdrawal requests here (see unprocessed conditions below)
+        // todo: load unprocessed withdrawal requests here (see unprocessed conditions below), up to some reasonable limit (we recommend 100 requests)
 
         if (!withdrawalRequests.length) return; // nothing to withdraw
 
@@ -101,7 +101,7 @@ const init = async () => {
 
         const now = (await tonweb.provider.getExtendedAddressInfo(hotWalletAddressString)).sync_utime;
 
-        for (const withdrawalRequest of withdrawalRequests.filter(req => !req.processed && !req.needsResend)) { // todo: use requests from db
+        for (const withdrawalRequest of withdrawalRequests.filter(req => !req.processed && !req.wasRecreated).slice(0, 100)) { // todo: use requests from db
             if (withdrawalRequest.queryId === null) { // not sent yet
 
                 withdrawalRequest.queryId = queryId.getQueryId();
@@ -114,8 +114,17 @@ const init = async () => {
 
                 withdrawalRequest.createdAt = now;
 
-                // todo: persist withdrawalRequest.queryId and withdrawalRequest.createdAt in your database
+                // convert the address to bounceable or non-bounceable form as needed
+                // you can also do that in the service that creates withdrawal requests instead of here
+                const addrInfo = await tonweb.provider.getAddressInfo(withdrawalRequest.toAddress);
+                const addr = new TonWeb.Address(withdrawalRequest.toAddress).toString(true, true, addrInfo.state === 'active');
+                if (addr !== withdrawalRequest.toAddress) {
+                    withdrawalRequest.toAddress = addr;
+                    // todo: persist withdrawalRequest.toAddress to db
+                }
+
                 // todo: persist queryId.getQueryId() in your database as the next query id
+                // todo: persist withdrawalRequest.queryId and withdrawalRequest.createdAt in your database
 
                 await sendWithdrawalRequest(withdrawalRequest);
 
@@ -126,28 +135,17 @@ const init = async () => {
 
                     // expired
 
-                    // todo: remove the request from db or mark it as failed (so that it is no longer retried)
-                    withdrawalRequest.needsResend = true;
+                    // todo: remove the request from db or mark it as recreated (so that it is no longer retried)
+                    withdrawalRequest.wasRecreated = true;
                     // todo: add a copy of the request to the db with no query id and created at, essentially re-creating it
                     withdrawalRequests.push({ ...withdrawalRequest, queryId: null, createdAt: null });
 
                 } else {
-                    const isProcessed = await highloadWallet.isProcessed(HighloadQueryId.fromQueryId(withdrawalRequest.queryId), false);
 
-                    if (isProcessed) {
-
-                        // todo: mark the withdrawal request as processed in db
-                        withdrawalRequest.processed = true;
-                        // whether it is sent or not (i.e. errored) can only be detemined in txTick
-
-                    } else {
-
-                        // repeat send with same `queryId` and `createdAt`
-                        try {
-                            await sendWithdrawalRequest(withdrawalRequest); // may throw due to TOCTOU
-                        } catch (e) {}
-
-                    }
+                    // repeat send with same `queryId` and `createdAt`
+                    try {
+                        await sendWithdrawalRequest(withdrawalRequest); // may throw due to TOCTOU
+                    } catch (e) {}
 
                 }
 
@@ -168,7 +166,7 @@ const init = async () => {
 
         const TX_LIMIT = 20;
 
-        let txs = await tonweb.provider.getTransactions(hotWalletAddressString, TX_LIMIT, undefined, undefined, undefined, true); // todo: remove archival if not needed
+        let txs = await tonweb.provider.getTransactions(hotWalletAddressString, TX_LIMIT, undefined, undefined, undefined, true); // todo: remove archival (last `true` argument) if not needed
         const fullTxList = [];
         mainloop: while (true) {
             for (const tx of txs.length < TX_LIMIT ? txs : txs.slice(0, txs.length - 1)) {
@@ -183,7 +181,7 @@ const init = async () => {
                 break;
             }
 
-            txs = await tonweb.provider.getTransactions(hotWalletAddressString, TX_LIMIT, txs[txs.length-1].transaction_id.lt, txs[txs.length-1].transaction_id.hash, undefined, true); // todo: remove archival if not needed
+            txs = await tonweb.provider.getTransactions(hotWalletAddressString, TX_LIMIT, txs[txs.length-1].transaction_id.lt, txs[txs.length-1].transaction_id.hash, undefined, true); // todo: remove archival (last `true` argument) if not needed
         }
 
         fullTxList.reverse();
@@ -205,7 +203,7 @@ const init = async () => {
                 const queryId = msgInner.loadUint(23);
                 const createdAt = msgInner.loadUint(64);
 
-                // todo: find req in db
+                // todo: update request.processed and request.sent on the request with matching queryId and createdAt in the db according to the logic below
                 const req = withdrawalRequests.find(r => r.queryId.toString() === queryId.toString() && r.createdAt.toString() === createdAt.toString());
                 if (req !== undefined) {
                     req.processed = true;
@@ -233,9 +231,9 @@ const init = async () => {
     };
 
     await txTick(); // wait for its completion for the first time to clean possible undiscovered txs from a possibly crashed state
-    setInterval(txTick, 10 * 1000);
+    setInterval(txTick, 5 * 1000); // 5 seconds
 
-    setInterval(tick, 10 * 1000); // 10 seconds
+    setInterval(tick, 8 * 1000); // 8 seconds
     tick();
 }
 
