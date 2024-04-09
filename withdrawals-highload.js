@@ -179,7 +179,7 @@ const init = async () => {
                 fullTxList.push(tx);
             }
 
-            if (txs.length < 20) {
+            if (txs.length < TX_LIMIT) {
                 break;
             }
 
