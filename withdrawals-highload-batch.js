@@ -257,6 +257,9 @@ const init = async () => {
                 batch.createdAt = now;
 
                 for (const request of batch.requests) {
+                    // convert the address to bounceable or non-bounceable form as needed
+                    // note: you can also do that in the service that creates withdrawal requests instead of here
+                    // if you do this in the other service, it should improve the performance of this withdrawal service
                     const addrInfo = await tonweb.provider.getAddressInfo(request.toAddress);
                     const addr = new TonWeb.Address(request.toAddress).toString(true, true, addrInfo.state === 'active');
                     if (addr !== request.toAddress) {
