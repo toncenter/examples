@@ -117,7 +117,8 @@ const init = async () => {
                 withdrawalRequest.createdAt = now;
 
                 // convert the address to bounceable or non-bounceable form as needed
-                // you can also do that in the service that creates withdrawal requests instead of here
+                // note: you can also do that in the service that creates withdrawal requests instead of here
+                // if you do this in the other service, it should improve the performance of this withdrawal service
                 const addrInfo = await tonweb.provider.getAddressInfo(withdrawalRequest.toAddress);
                 const addr = new TonWeb.Address(withdrawalRequest.toAddress).toString(true, true, addrInfo.state === 'active');
                 if (addr !== withdrawalRequest.toAddress) {
