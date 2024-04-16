@@ -311,10 +311,6 @@ const init = async () => {
 
             fullTxList.reverse();
 
-            if (fullTxList.length > 0) {
-                console.log('Found new txs on', name, 'from', fullTxList[0].transaction_id.lt, fullTxList[0].transaction_id.hash, 'to', fullTxList[fullTxList.length-1].transaction_id.lt, fullTxList[fullTxList.length-1].transaction_id.hash);
-            }
-
             for (const tx of fullTxList) {
                 try {
 
