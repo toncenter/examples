@@ -84,6 +84,15 @@ const jettonWalletAddressToJettonName = (jettonWalletAddress) => {
     return null;
 }
 
+function parsePayload(payload) {
+    let payloadBytes = [];
+    while (payload) {
+        payloadBytes = [...payloadBytes, ...payload.loadBits(payload.getFreeBits())];
+        payload = payload.loadRef();
+    }
+    return new TextDecoder().decode(new Uint8Array(payloadBytes));
+}
+
 // Listen
 
 const init = async () => {
@@ -125,8 +134,7 @@ const init = async () => {
             console.log('no text comment in transfer_notification');
             return;
         }
-        const payloadBytes = payload.loadBits(slice.getFreeBits());
-        const comment = new TextDecoder().decode(payloadBytes);
+        const comment = parsePayload(payload);
         console.log('Got ' + jettonName + ' jetton deposit ' + amount.toString() + ' units with text comment "' + comment + '"');
     }
 
